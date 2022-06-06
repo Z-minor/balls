@@ -196,10 +196,11 @@ Ball.prototype.draw42 = function() {
   ctx.fillStyle = `hsla(${this.hue},${this.saturation}%,${this.lightness}%,${this.baby/500})`;
   //ctx.strokeStyle = `hsla(${this.hue},${this.saturation}%,90%,${this.baby/1000})`;
   ctx.arc(this.x, this.y, this.size, 0, 2 * Math.PI);
+  //ctx.shadowColor = "transparent";
   ctx.shadowColor = `hsla(${this.hue},${this.saturation}%,10%,1)`;
   ctx.shadowOffsetY = 10;
   ctx.shadowOffsetX = 10;
-  ctx.shadowBlur = 10;
+  ctx.shadowBlur = 3;
   ctx.fill();
   //ctx.stroke();
 };
@@ -216,7 +217,7 @@ Ball.prototype.draw = function() {
 
   ctx.beginPath();
   if(this.baby<=150){
-    ctx.fillStyle = `hsla(0,0%,${(150-this.baby)/3}%,${this.baby/500})`;
+    ctx.fillStyle = `hsla(0,0%,${(50+this.baby)/3}%,${this.baby/500})`;
   }
   else{
     ctx.fillStyle = `hsla(0,0%,0%,${this.baby/300})`;
