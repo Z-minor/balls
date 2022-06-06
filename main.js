@@ -3,7 +3,6 @@
 const canvas = document.querySelector('canvas');
 const ctx = canvas.getContext('2d');
 
-let heart = document.getElementById("heart");
 let width = canvas.width = window.innerWidth;
 let height = canvas.height = window.innerHeight;
 let 短邊;
@@ -613,17 +612,27 @@ function loop() {
       ctx.beginPath();
       ctx.arc(補血道具x, 補血道具y, 18+(計時器%100*2) , 0, 2 * Math.PI);
       ctx.lineWidth = 1;
-      ctx.strokeStyle = `hsla(0,100%,100%,${(50-計時器%100)/100})`;
+      ctx.strokeStyle = `hsla(250,100%,90%,${(50-計時器%100)/100})`;
       ctx.stroke();
 
-      heart.style.top = `${補血道具y-9}px`;
-      heart.style.left = `${補血道具x-7.5}px`;
-      heart.style.display = 'block';
+      ctx.beginPath();
+      ctx.fillStyle = `hsla(${Math.abs((計時器)%100-50)+230},90%,80%,${0.1*Math.abs((計時器+25)%100-50)/50+0.9})`;
+      ctx.moveTo(補血道具x, 補血道具y+8);
+      ctx.bezierCurveTo(補血道具x-15, 補血道具y+3, 補血道具x-5, 補血道具y-15, 補血道具x, 補血道具y-4);
+      ctx.bezierCurveTo(補血道具x+5, 補血道具y-15, 補血道具x+15, 補血道具y+3, 補血道具x, 補血道具y+8);
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.moveTo(補血道具x, 補血道具y+8);
+      ctx.bezierCurveTo(補血道具x-15, 補血道具y+3, 補血道具x-5, 補血道具y-15, 補血道具x, 補血道具y-4);
+      ctx.bezierCurveTo(補血道具x+5, 補血道具y-15, 補血道具x+15, 補血道具y+3, 補血道具x, 補血道具y+8);
+      ctx.lineWidth = 0.5;
+      ctx.strokeStyle = `hsla(${Math.abs((計時器)%100-50)+230},100%,90%,${0.5*Math.abs(20-計時器%40)/20+0.5})`;
+      ctx.stroke();
 
       //檢測鼠標與補血道具碰撞與否
 
       if (Math.sqrt((mouse.x-補血道具x)*(mouse.x-補血道具x)+(mouse.y-補血道具y)*(mouse.y-補血道具y))<23){
-        heart.style.display = 'none';
         hp++;
         if(hp<5){
           補血道具重生計時=1;
@@ -705,7 +714,6 @@ loop();
 
 function 遊戲結束() {
   document.querySelector("body").removeEventListener("click",炸彈攻擊);
-  heart.style.display = 'none';
   ctx.fillStyle = `hsla(0,0%,0%,0.1)`;
   ctx.shadowColor = `hsla(250,100%,0%,0.02)`;
   ctx.fillRect(0,0,width,height);
