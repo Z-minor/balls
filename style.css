@@ -129,3 +129,14 @@ h1 {
   letter-spacing: -0.04em;
   text-shadow: 0 0 0.04em hsla(0,100%,100%,0.1);
 }
+
+#heart {
+  display: none;
+  position: absolute;
+  height:10px;
+  width:10px;
+  top: 50%;
+  left: 50%;
+  color: hsla(295, 67%, 13%, 0.9);
+  text-shadow: 0 0 0.5em hsla(295, 67%, 13%, 0.8);
+}
