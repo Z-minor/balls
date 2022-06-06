@@ -135,6 +135,7 @@ h1 {
   position: absolute;
   height:10px;
   width:10px;
+  font-family:'Times New Roman', Times, serif;
   top: 50%;
   left: 50%;
   color: hsla(295, 67%, 13%, 0.9);

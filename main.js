@@ -616,7 +616,7 @@ function loop() {
       ctx.strokeStyle = `hsla(0,100%,100%,${(50-計時器%100)/100})`;
       ctx.stroke();
 
-      heart.style.top = `${補血道具y-10}px`;
+      heart.style.top = `${補血道具y-9}px`;
       heart.style.left = `${補血道具x-7.5}px`;
       heart.style.display = 'block';
 
