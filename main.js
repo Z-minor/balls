@@ -490,6 +490,8 @@ function loop() {
 
   if(count==0){
 
+    遊戲靜止 = 0;
+
     lune.currentTime = 0;
     lune.play();
 
@@ -764,7 +766,8 @@ function loop() {
 
     爆炸半徑++;
 
-    
+
+    //繪製數字
 
 
     if(hp>0){
@@ -793,9 +796,23 @@ function loop() {
 
 //調整視窗大小時，改變畫布大小，同時防止鼠標出界
 
+let 遊戲靜止 = 1;
+let 數字顏色 = 0;
+
 window.onresize = function() {
   width = canvas.width = window.innerWidth;
   height = canvas.height = window.innerHeight;
+  if(遊戲靜止 == 1){
+    ctx.fillStyle = `hsla(255,30%,10%,1)`;
+    ctx.fillRect(0,0,width,height);
+  }
+  else if(遊戲靜止 == 2){
+    document.querySelector(".number").style.color= `hsla(0,100%,100%,${(數字顏色)/200+0.01})`;
+    document.querySelector(".number").style.textShadow =`0 0 0.04em hsla(0,100%,100%,${(數字顏色)/200+0.01})`;
+    document.querySelector(".number").style.fontSize = `${(數字顏色+9)}vw`;
+    ctx.fillStyle = `hsla(255,0%,0%,1)`;
+    ctx.fillRect(0,0,width,height);
+  }
   if(mouse.x > width){
     mouse.x = width;
   }
@@ -803,6 +820,9 @@ window.onresize = function() {
     mouse.y = height;
   }
 }
+
+
+// 遊戲開始！
 
 
 ctx.fillStyle = `hsla(255,30%,10%,1)`;
@@ -840,6 +860,8 @@ function 遊戲結束() {
     requestAnimationFrame(遊戲結束);
   }
   else{
+    數字顏色 = count/150+1;
+    遊戲靜止 = 2;
     if(balls.length >= 42&&hardMode==0){
       document.getElementById("w42").textContent = "《 you got 42! 已解鎖擁擠模式：更難，更緊 張。》";
       hardMode = 1;
