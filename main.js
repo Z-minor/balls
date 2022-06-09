@@ -33,7 +33,28 @@ let 血量 = [1,1,1,1,0];
 let 補血道具重生計時 = 0;
 let 補血道具x;
 let 補血道具y;
-let 炸彈爆炸特效定位與計時 = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
+let 炸彈爆炸特效定位與計時 = [[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]];
+let 爆炸半徑 = 0;
+let 自身原始半徑 = 20;
+let 自身半徑 = 自身原始半徑;
+let 自身最小半徑 = 4;
+let 自身變大 = 0;
+
+let lune = document.getElementById("lune");
+let cat = document.getElementById("cat");
+let end = document.getElementById("end");
+let boom = document.getElementById("boom");
+
+let bubble = document.getElementById("bubble");
+
+document.addEventListener('click', lunePlay);
+function lunePlay() {
+  document.getElementById('lune').play();
+  document.removeEventListener('click', lunePlay);
+}
+
+
+
 
 //k = 碰撞檢測隨機起始點（已棄用）：為了避免晚出生的球，在碰撞檢測方面的優先度一率會覆蓋早出生的球。實驗證明效果不好，會使得球大量重疊時容易在原地打轉。
 
@@ -62,11 +83,11 @@ function drawMe() {
   ctx.shadowColor = 'white';
   ctx.shadowOffsetY = 0;
   ctx.shadowOffsetX = 0;
-  ctx.arc(mouse.x, mouse.y, 5 , 0, 2 * Math.PI);
+  ctx.arc(mouse.x, mouse.y, 自身半徑 , 0, 2 * Math.PI);
   ctx.fill();
 
   ctx.beginPath();
-  ctx.arc(mouse.x, mouse.y, 短邊/5 , 0, 2 * Math.PI);
+  ctx.arc(mouse.x, mouse.y, 爆炸半徑 , 0, 2 * Math.PI);
   ctx.shadowColor = `hsla(30,100%,100%,1)`;
   ctx.shadowOffsetY = 0;
   ctx.shadowOffsetX = 0;
@@ -152,7 +173,7 @@ function Ball(x, y, velX, velY, size) {
   ctx.shadowColor = 'white';
   ctx.shadowOffsetY = 0;
   ctx.shadowOffsetX = 0;
-  ctx.arc(mouse.x, mouse.y, (alive+4), 0, 2 * Math.PI);
+  ctx.arc(mouse.x, mouse.y, (alive+自身半徑), 0, 2 * Math.PI);
   ctx.fill();
   };
 
@@ -281,9 +302,14 @@ Ball.prototype.collisionDetect = function() {
   //球與鼠標間的碰撞
   
   if(this.baby > 150 && alive ==1){
-    if(Math.sqrt((mouse.x-this.x)*(mouse.x-this.x)+(mouse.y-this.y)*(mouse.y-this.y))<5+this.size){
+    if(Math.sqrt((mouse.x-this.x)*(mouse.x-this.x)+(mouse.y-this.y)*(mouse.y-this.y))<自身半徑+this.size){
       this.size /=3;
       alive = 100;
+
+      cat.currentTime = 0;
+      cat.play();
+      
+
       if(補血道具重生計時 == 0){
         補血道具重生計時 = 1;
       }
@@ -393,14 +419,20 @@ Ball.prototype.球大小變化方向反轉判斷 = function() {
 };
 
 
-//炸彈攻擊函數
+// 炸彈攻擊函數
+
 
 function 炸彈攻擊() {
-  if (hp>1){
+  if (alive==1&&hp>1){
+    
+    boom.play();
+    boom.currentTime = 0;
+      
     炸彈爆炸特效定位與計時[hp-2][0]=mouse.x;
     炸彈爆炸特效定位與計時[hp-2][1]=mouse.y;
     炸彈爆炸特效定位與計時[hp-2][2]=30;
     炸彈爆炸特效定位與計時[hp-2][3]=1;
+    炸彈爆炸特效定位與計時[hp-2][4]=爆炸半徑;
     if(補血道具重生計時==0){
       補血道具重生計時=1;
     }
@@ -408,7 +440,7 @@ function 炸彈攻擊() {
     血量[hp]=0;
     //依序檢測所有敵球，範圍內的敵球大小全部縮小
     for (l=0; l<balls.length; l++){
-      if (Math.sqrt((mouse.x-balls[l].x)*(mouse.x-balls[l].x)+(mouse.y-balls[l].y)*(mouse.y-balls[l].y))<短邊/5+balls[l].size){
+      if (Math.sqrt((mouse.x-balls[l].x)*(mouse.x-balls[l].x)+(mouse.y-balls[l].y)*(mouse.y-balls[l].y))<爆炸半徑+balls[l].size){
         if (balls[l].size > width/100 || balls[l].size > height/100){
           balls[l].size/=5;
           if (balls[l].size < 短邊/100){
@@ -417,9 +449,11 @@ function 炸彈攻擊() {
         }
         balls[l].被炸特效=15;
       }
+     }
+    自身變大 = 1;
+    爆炸半徑 = 0;
     }
   }
-}
 
 
 // 定義一個數組，定時生成並保存所有的新球
@@ -452,6 +486,13 @@ function loop() {
   //初始化各種設置
 
   if(count==0){
+
+    lune.currentTime = 0;
+    lune.play();
+
+    爆炸半徑 = 0;
+    自身半徑 = 自身原始半徑;
+    自身變大 = 0;
     補血道具重生計時 = 1;
     hp = 4;
     alive = 15;
@@ -526,6 +567,16 @@ function loop() {
     if(mouse.x!=0 && mouse.y!=0 && alive==1){
       drawMe();
     }
+    if(自身變大 == 1){
+      自身半徑 += 3;
+      if(自身半徑>自身原始半徑){
+        自身變大 = 0;
+      }
+    }
+    else if(自身半徑>自身最小半徑){
+      自身半徑-=0.05;
+    }
+
 
     //依序繪製與計算每顆球
 
@@ -664,7 +715,9 @@ function loop() {
 
       //檢測鼠標與補血道具碰撞與否
 
-      if (Math.sqrt((mouse.x-補血道具x)*(mouse.x-補血道具x)+(mouse.y-補血道具y)*(mouse.y-補血道具y))<23){
+      if (Math.sqrt((mouse.x-補血道具x)*(mouse.x-補血道具x)+(mouse.y-補血道具y)*(mouse.y-補血道具y))<自身半徑+18){
+        bubble.currentTime = 0;
+        bubble.play();
         hp++;
         if(hp<5){
           補血道具重生計時=1;
@@ -678,6 +731,8 @@ function loop() {
       }
     }
 
+    
+
     //繪製炸彈爆炸特效
     for(let p=0; p<4; p++){
       if(炸彈爆炸特效定位與計時[p][3]==1){
@@ -685,7 +740,7 @@ function loop() {
         
         ctx.beginPath();
         ctx.fillStyle = `hsla(0,100%,100%,${炸彈爆炸特效定位與計時[p][2]/30})`;
-        ctx.arc(炸彈爆炸特效定位與計時[p][0], 炸彈爆炸特效定位與計時[p][1], 短邊/5, 0, 2 * Math.PI);
+        ctx.arc(炸彈爆炸特效定位與計時[p][0], 炸彈爆炸特效定位與計時[p][1], 炸彈爆炸特效定位與計時[p][4], 0, 2 * Math.PI);
         ctx.shadowColor = `hsla(30,100%,60%,1)`;
         ctx.shadowOffsetY = 0;
         ctx.shadowOffsetX = 0;
@@ -699,6 +754,11 @@ function loop() {
         }
       }
     }
+
+
+    //爆炸半徑增加
+
+    爆炸半徑++;
 
     
 
@@ -740,11 +800,27 @@ window.onresize = function() {
   }
 }
 
-loop();
+
+ctx.fillStyle = `hsla(255,30%,10%,1)`;
+ctx.fillRect(0,0,width,height);
+document.getElementById("w42").style.textShadow = '0 0 4px hsla(0,100%,100%,0.3)'
+document.getElementById("w42").textContent = "點擊以開始旅程..."
+document.addEventListener('click', start);
+function start() {
+  document.removeEventListener('click', start);
+  loop();
+}
 
 // 結束函數
 
+
+
 function 遊戲結束() {
+  if(fails==50){
+    end.currentTime = 0;
+    end.play();
+    lune.pause()
+  }
   document.querySelector("body").removeEventListener("click",炸彈攻擊);
   ctx.fillStyle = `hsla(0,0%,0%,0.1)`;
   ctx.shadowColor = `hsla(250,100%,0%,0.02)`;

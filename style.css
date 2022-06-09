@@ -29,6 +29,7 @@ h1 {
 }
 
 .w42 {
+  user-select: none;
   margin:auto auto 10px;
   right:0;
   left:0;
@@ -42,7 +43,7 @@ h1 {
 }
 
  #w42 {
-  
+  user-select: none;
   font-size: 2rem;
   font-family: 'Arial Black','sans-serif';
   letter-spacing: -1px;
@@ -122,6 +123,7 @@ h1 {
 }
 
 .number {
+  user-select: none;
   font-family: 'Arial Black','sans-serif';
   font-size: 50vw;
   letter-spacing: -1px;
