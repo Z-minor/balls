@@ -304,6 +304,9 @@ Ball.prototype.collisionDetect = function() {
   if(this.baby > 150 && alive ==1){
     if(Math.sqrt((mouse.x-this.x)*(mouse.x-this.x)+(mouse.y-this.y)*(mouse.y-this.y))<自身半徑+this.size){
       this.size /=3;
+      if (this.size < 短邊/100){
+        this.size = 短邊/100;
+      }
       alive = 100;
 
       cat.currentTime = 0;
@@ -643,6 +646,7 @@ function loop() {
 
       if(補血道具重生計時>1000){
         補血道具重生計時=-1;
+        bubble.currentTime = 0;
 
         //初始化補血道具位子
 
