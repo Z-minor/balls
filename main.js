@@ -39,12 +39,19 @@ let 自身原始半徑 = 20;
 let 自身半徑 = 自身原始半徑;
 let 自身最小半徑 = 4;
 let 自身變大 = 0;
+let 回血量 = 1;
+let 子彈時間計時器 = 0;
+let 子彈時間速度因子 = 1;
+let 子彈時間總長 = 300;
+let 子彈時間減速區間比例 = 5;
+let 子彈時間迭代起始速度 = 1;
+
 
 let lune = document.getElementById("lune");
 let cat = document.getElementById("cat");
 let end = document.getElementById("end");
 let boom = document.getElementById("boom");
-
+let lala = document.getElementById("lala");
 let bubble = document.getElementById("bubble");
 
 document.addEventListener('click', lunePlay);
@@ -136,6 +143,8 @@ function Ball(x, y, velX, velY, size) {
   this.size = size;
   this.d = (this.velX*this.velX+this.velY*this.velY)/40*Math.random()+0.5;
   this.baby = 0;
+  this.緩速狀態 = 0;
+  this.當前幀大小變化 = 0;
 }
 
 // 寶寶無害期
@@ -289,9 +298,14 @@ Ball.prototype.update = function() {
   if((this.y - this.size + 50) <= 0 && this.velY < 0) {
     this.velY = -(this.velY);
   }
-
-  this.x += this.velX;
-  this.y += this.velY;
+  if(this.緩速狀態==1){
+    this.x += this.velX*子彈時間速度因子;
+    this.y += this.velY*子彈時間速度因子;
+  }
+  else{
+    this.x += this.velX*(1+子彈時間速度因子)/2;
+    this.y += this.velY*(1+子彈時間速度因子)/2;
+  }
 };
 
 // 定義碰撞檢測函數
@@ -383,11 +397,33 @@ Ball.prototype.單組碰撞處理 = function () {
       }
 
       
-      this.size += this.d*0.8;
-      if(this.size>height/8){
-        this.size += this.d*(this.size-height/8)/20;
+      //大小增減
+      if(this.當前幀大小變化<8){
+        if(this.緩速狀態==1){
+          this.size += this.d*0.8*子彈時間速度因子;
+          if(this.size>height/8){
+            this.size += this.d*(this.size-height/8)/20*子彈時間速度因子;
+          }
+        }
+        else{
+          this.size += this.d*0.8;
+          if(this.size>height/8){
+            this.size += this.d*(this.size-height/8)/20;
+          }
+        }
+        this.當前幀大小變化++;
       }
-      balls[j].size += balls[j].d;
+      
+      if(balls[j].當前幀大小變化<8){
+        if(balls[j].緩速狀態==1){
+          balls[j].size += balls[j].d*子彈時間速度因子;
+        }
+        else{
+          balls[j].size += balls[j].d
+        }
+        balls[j].當前幀大小變化++;
+      }
+      
       
     }
   }
@@ -430,6 +466,12 @@ function 炸彈攻擊() {
     
     boom.play();
     boom.currentTime = 0;
+
+    子彈時間計時器 = 1;
+
+    if(子彈時間計時器>0){
+      子彈時間迭代起始速度 = 子彈時間速度因子;
+    }
       
     炸彈爆炸特效定位與計時[hp-2][0]=mouse.x;
     炸彈爆炸特效定位與計時[hp-2][1]=mouse.y;
@@ -451,6 +493,7 @@ function 炸彈攻擊() {
           }
         }
         balls[l].被炸特效=15;
+        balls[l].緩速狀態=1;
       }
      }
     自身變大 = 1;
@@ -489,6 +532,10 @@ function loop() {
   //初始化各種設置
 
   if(count==0){
+
+    子彈時間計時器 = 0;
+    子彈時間速度因子 = 1;
+    子彈時間迭代起始速度=1;
 
     遊戲靜止 = 0;
 
@@ -601,6 +648,7 @@ function loop() {
       if(balls[i].collisionDetect()==0){
         break;
       }
+      balls[i].當前幀大小變化 = 0;
       if(k<balls.length-1){
         k++;
       }
@@ -608,6 +656,8 @@ function loop() {
         k=0;
       }
     }
+
+  
 
     //補血道具
 
@@ -724,14 +774,24 @@ function loop() {
       if (Math.sqrt((mouse.x-補血道具x)*(mouse.x-補血道具x)+(mouse.y-補血道具y)*(mouse.y-補血道具y))<自身半徑+18){
         bubble.currentTime = 0;
         bubble.play();
-        hp++;
+        for(let p=1;p<=回血量;p++){
+          hp++;
+          if(hp>5){
+            hp=5;
+            break;
+          }
+          document.getElementById(`l${hp}`).style.backgroundColor = "hsla(0,100%,100%,0.6)";
+          document.getElementById(`l${hp}`).style.boxShadow = "0px 0px 5px hsla(260,100%,100%,0.8)";
+        }
         if(hp<5){
           補血道具重生計時=1;
         }
         else{
           補血道具重生計時=0;
         }
-        血量[hp-1]=1;
+        for(let o=1;o<=回血量;o++){
+          血量[hp-o]=1;
+        }
         document.getElementById(`l${hp}`).style.backgroundColor = "hsla(0,100%,100%,0.6)";
         document.getElementById(`l${hp}`).style.boxShadow = "0px 0px 5px hsla(260,100%,100%,0.8)";
       }
@@ -765,6 +825,29 @@ function loop() {
     //爆炸半徑增加
 
     爆炸半徑++;
+
+    //子彈時間模塊
+    //  總共 100/子彈時間減速區間比例 % 2 的時間為減速時段，其餘為加速時段。
+
+
+
+    if(子彈時間計時器>0){
+      子彈時間計時器++;
+      if(子彈時間計時器<子彈時間總長/子彈時間減速區間比例){
+        子彈時間速度因子=Math.pow((子彈時間總長/子彈時間減速區間比例-子彈時間計時器)/子彈時間總長*子彈時間減速區間比例,1.5)*子彈時間迭代起始速度;
+      }
+      else{
+        子彈時間速度因子=Math.pow(1/((子彈時間總長*1.1-((子彈時間計時器-子彈時間總長/子彈時間減速區間比例)/(1-1/子彈時間減速區間比例)))/子彈時間總長*10),1.3);
+      }
+      if(子彈時間計時器>子彈時間總長){
+        子彈時間計時器=0;
+        子彈時間速度因子=1;
+        子彈時間迭代起始速度=1;
+        for(let o=0;o<balls.length;o++){
+          balls[o].緩速狀態=0;
+        }
+      }
+    }
 
 
     //繪製數字
