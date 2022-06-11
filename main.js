@@ -134,14 +134,14 @@ function Ball(x, y, velX, velY, size) {
   this.yr = 0;
   this.velX = velX;
   this.velY = velY;
-  this.speed = Math.sqrt(velX*velX+velY*velY);
+  this.speed = Math.sqrt(Math.pow(Math.abs(velX),1.7)+Math.pow(Math.abs(velY),1.7));
   this.hue = random(230, 280);
   this.hueD = random(0, 1);
   this.saturation = random(40, 100);
   this.lightness = randomND(50, 80);
   this.被炸特效 = 0;
   this.size = size;
-  this.d = (this.velX*this.velX+this.velY*this.velY)/40*Math.random()+0.5;
+  this.d = (Math.pow(Math.abs(velX),1.5)+Math.pow(Math.abs(velY),1.5))/40*Math.random()+0.5;
   this.baby = 0;
   this.緩速狀態 = 0;
   this.當前幀大小變化 = 0;
@@ -506,19 +506,30 @@ function 炸彈攻擊() {
 
 let balls = [];
 let count = 0;
+let x軸速度;
+let y軸速度;
 
 function createballs() {
   if((balls.length < (count)/8-Math.pow((balls.length),1.5) && balls.length < 42) || balls.length >= 42 ) {
     let size = random(10,height/2-count/150);
     if(balls.length>=42){
-      size += balls.length*3;
+      size += balls.length*1;
     }
+
+    for(let o=0;o<4;o++){
+      x軸速度 = randomND(-5-balls.length/8,5+balls.length/8);
+      y軸速度 = randomND(-5-balls.length/8,5+balls.length/8);
+      if(Math.sqrt(Math.pow(Math.abs(x軸速度),1.7)+Math.pow(Math.abs(y軸速度),1.7))>0.25){
+        break;
+      }
+    }
+
     let ball = new Ball(
     
       random(0 + size, width - size),
       random(0 + size, height - size),
-      randomND(-5-balls.length/7,5+balls.length/7),
-      randomND(-5-balls.length/7,5+balls.length/7),
+      x軸速度,
+      y軸速度,
       size
     );
     balls.push(ball);
