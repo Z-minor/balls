@@ -16,6 +16,28 @@ body {
   height: inherit;
 }
 
+#移動端訊息 {
+  position: absolute;
+  display: none;
+  font-size: 1.8vh;
+  top: 50%;
+  left: 50%;
+  height: 200vh;
+  width: 200vw;
+  transform: translate(-50% , -50%);
+  background-color: rgb(26, 20, 30);
+}
+
+#不支援 {
+  position: relative;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50% , -50%);
+  text-align: center;
+  color: rgb(218, 242, 242);
+  border: 0px solid rgb(218, 242, 242);
+}
+
 h1 {
   font-size: 0rem;
   letter-spacing: -1px;

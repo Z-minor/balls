@@ -1,3 +1,17 @@
+
+let 移動端 = false;
+
+if (isMobile()) {
+  移動端訊息.style.display="block";
+  移動端 = true;
+}
+
+function isMobile() {
+  let flag = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  return flag;
+}
+
+
 // 設置畫布
 
 const canvas = document.querySelector('canvas');
@@ -762,7 +776,7 @@ function loop() {
       else{
         愛心脈動比例 = 1;
       }
-      愛心脈動比例
+      
       ctx.moveTo(補血道具x, 補血道具y+8*愛心脈動比例);
       ctx.bezierCurveTo(補血道具x-15*愛心脈動比例, 補血道具y+3*愛心脈動比例, 補血道具x-5*愛心脈動比例, 補血道具y-15*愛心脈動比例, 補血道具x, 補血道具y-4*愛心脈動比例);
       ctx.bezierCurveTo(補血道具x+5*愛心脈動比例, 補血道具y-15*愛心脈動比例, 補血道具x+15*愛心脈動比例, 補血道具y+3*愛心脈動比例, 補血道具x, 補血道具y+8*愛心脈動比例);
@@ -838,7 +852,7 @@ function loop() {
     爆炸半徑++;
 
     //子彈時間模塊
-    //  總共 100/子彈時間減速區間比例 % 2 的時間為減速時段，其餘為加速時段。
+    //  總共 100/子彈時間減速區間比例 %  的時間為減速時段，其餘為加速時段。
 
 
 
