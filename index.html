@@ -226,8 +226,10 @@ let mouse = { x: 0, y: 0 };
 let 上一觸控位置 = null;
 // 觸控：用來區分「移動」和「點擊炸彈」
 let 觸控移動中 = false;
+let 觸控開始時間 = 0;
 const 觸控移動倍率 = 1.5;
-const 點擊判定距離 = 10; // px，小於此距離才算點擊（輕觸炸彈）
+const 點擊判定距離 = 10;
+const 點擊判定時間 = 400; // ms，超過此時間不觸發炸彈
 
 
 
@@ -242,6 +244,7 @@ window.addEventListener('touchstart', (e) => {
   if (e.touches.length === 1) {
     const t = e.touches[0];
     上一觸控位置 = { x: t.pageX, y: t.pageY };
+    觸控開始時間 = Date.now();
     觸控移動中 = false;
   }
 }, { passive: false });
@@ -267,10 +270,11 @@ window.addEventListener('touchmove', (e) => {
   }
 }, { passive: false });
 
-// touchend：手指放開，若沒有移動 → 輕觸炸彈
+// touchend：手指放開，若沒有移動且時間夠短 → 輕觸炸彈
 window.addEventListener('touchend', (e) => {
   e.preventDefault();
-  if (!觸控移動中) {
+  const 觸碰時間 = Date.now() - 觸控開始時間;
+  if (!觸控移動中 && 觸碰時間 < 點擊判定時間) {
     炸彈攻擊();
   }
   上一觸控位置 = null;
