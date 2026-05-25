@@ -159,6 +159,15 @@ let width  = canvas.width  = window.innerWidth;
 let height = canvas.height = window.innerHeight;
 let 短邊 = Math.min(width, height);
 
+// ── DOM 元素快取（避免每幀重複 querySelector）──────────────
+const el數字 = document.querySelector('.number');
+const elW42  = document.getElementById('w42');
+const elHP   = [null, ...Array.from({length:5}, (_,i) => document.getElementById(`l${i+1}`))];
+
+// 上一幀的數值，避免沒必要的 style 寫入
+let _上次balls數量 = -1;
+let _上次count    = -1;
+
 let 計時器 = 0;
 let 愛心脈動比例 = 0;
 let fails = 0;
@@ -279,10 +288,10 @@ function drawMe() {
 
   ctx.beginPath();
   ctx.arc(mouse.x, mouse.y, 爆炸半徑, 0, 2 * Math.PI);
-  ctx.shadowColor   = 'hsla(30,100%,100%,1)';
+  ctx.shadowColor   = 'transparent';
   ctx.shadowOffsetY = 0;
   ctx.shadowOffsetX = 0;
-  ctx.shadowBlur    = 20;
+  ctx.shadowBlur    = 0;
   ctx.lineWidth     = 1;
   ctx.strokeStyle   = `hsla(0,100%,100%,${0.5*(Math.abs(計時器%140-70))/70+0.1})`;
   ctx.stroke();
@@ -341,8 +350,10 @@ function disappear() {
 }
 
 function 血條損一滴血(第n滴血) {
-  document.getElementById(`l${第n滴血}`).style.backgroundColor = `hsla(0,100%,0%,${(-血量[第n滴血-1])/100})`;
-  document.getElementById(`l${第n滴血}`).style.boxShadow = `0px 0px 5px hsla(0,100%,0%,${(-血量[第n滴血-1])/100})`;
+  const el = elHP[第n滴血];
+  const a = (-血量[第n滴血-1])/100;
+  el.style.backgroundColor = `hsla(0,100%,0%,${a})`;
+  el.style.boxShadow = `0px 0px 5px hsla(0,100%,0%,${a})`;
 }
 
 function appear() {
@@ -671,17 +682,19 @@ function loop() {
     document.querySelector('body').addEventListener('click', 炸彈攻擊);
     // 注意：觸控炸彈已在 touchend 事件中處理，不需重複綁定
 
-    document.getElementById('w42').style.textShadow = '0 0 4px hsla(0,100%,100%,0)';
+    elW42.style.textShadow = '0 0 4px hsla(0,100%,100%,0)';
     for (let k = 1; k < 6; k++) {
-      document.getElementById(`l${k}`).style.backgroundColor = 'hsla(0,100%,100%,0.6)';
-      document.getElementById(`l${k}`).style.boxShadow = '0px 0px 5px hsla(260,100%,100%,0.8)';
+      elHP[k].style.backgroundColor = 'hsla(0,100%,100%,0.6)';
+      elHP[k].style.boxShadow = '0px 0px 5px hsla(260,100%,100%,0.8)';
     }
+    _上次balls數量 = -1;
+    _上次count    = -1;
     document.querySelector('body').removeEventListener('click', loop);
   }
 
   計時器++;
 
-  if ((hardMode==0 && balls.length<=42) || hardMode==1 || 1) {
+  if (true) {  // 主循環永遠執行，遊戲結束只靠 hp==0 觸發
 
     if (balls.length < 42) {
       createballs();
@@ -818,13 +831,13 @@ function loop() {
         for (let p = 1; p <= 回血量; p++) {
           hp++;
           if (hp > 5) { hp = 5; break; }
-          document.getElementById(`l${hp}`).style.backgroundColor = 'hsla(0,100%,100%,0.6)';
-          document.getElementById(`l${hp}`).style.boxShadow = '0px 0px 5px hsla(260,100%,100%,0.8)';
+          elHP[hp].style.backgroundColor = 'hsla(0,100%,100%,0.6)';
+          elHP[hp].style.boxShadow = '0px 0px 5px hsla(260,100%,100%,0.8)';
         }
         補血道具重生計時 = hp < 5 ? 1 : 0;
         for (let o = 1; o <= 回血量; o++) 血量[hp-o] = 1;
-        document.getElementById(`l${hp}`).style.backgroundColor = 'hsla(0,100%,100%,0.6)';
-        document.getElementById(`l${hp}`).style.boxShadow = '0px 0px 5px hsla(260,100%,100%,0.8)';
+        elHP[hp].style.backgroundColor = 'hsla(0,100%,100%,0.6)';
+        elHP[hp].style.boxShadow = '0px 0px 5px hsla(260,100%,100%,0.8)';
       }
     }
 
@@ -865,21 +878,29 @@ function loop() {
     // 觸控提示圖示
     drawTouchHint();
 
-    // 數字
+    // 數字：只在數值真正改變時才觸發 DOM 寫入
     if (hp > 0) {
       if (count < 6200) count++;
-      document.querySelector('.number').textContent = `${balls.length}`;
-      document.querySelector('.number').style.color       = `hsla(0,100%,100%,${(count/150+1)/200})`;
-      document.querySelector('.number').style.textShadow  = `0 0 0.04em hsla(0,100%,100%,${(count/150+1)/200})`;
-      document.querySelector('.number').style.fontSize    = `${(count/150+10)}vw`;
+
+      if (balls.length !== _上次balls數量) {
+        el數字.textContent = `${balls.length}`;
+        _上次balls數量 = balls.length;
+      }
+
+      // count 每 10 幀才更新一次字體大小（視覺上完全看不出差異）
+      if (count !== _上次count && count % 10 === 0) {
+        const a = (count/150+1)/200;
+        el數字.style.color      = `hsla(0,100%,100%,${a})`;
+        el數字.style.textShadow = `0 0 0.04em hsla(0,100%,100%,${a})`;
+        el數字.style.fontSize   = `${(count/150+10)}vw`;
+        _上次count = count;
+      }
+
       requestAnimationFrame(loop);
     } else {
       fails = 50;
       遊戲結束();
     }
-  } else {
-    fails = 50;
-    遊戲結束();
   }
 }
 
@@ -889,23 +910,31 @@ function loop() {
 let 遊戲靜止 = 1;
 let 數字顏色 = 0;
 
+let _resizeTimer = null;
 window.onresize = function() {
-  width  = canvas.width  = window.innerWidth;
-  height = canvas.height = window.innerHeight;
-  短邊 = Math.min(width, height);
+  // 滑鼠邊界即時夾住（不等 debounce）
+  if (mouse.x > window.innerWidth)  mouse.x = window.innerWidth;
+  if (mouse.y > window.innerHeight) mouse.y = window.innerHeight;
 
-  if (遊戲靜止 == 1) {
-    ctx.fillStyle = 'hsla(255,30%,10%,1)';
-    ctx.fillRect(0, 0, width, height);
-  } else if (遊戲靜止 == 2) {
-    document.querySelector('.number').style.color      = `hsla(0,100%,100%,${數字顏色/200+0.01})`;
-    document.querySelector('.number').style.textShadow = `0 0 0.04em hsla(0,100%,100%,${數字顏色/200+0.01})`;
-    document.querySelector('.number').style.fontSize   = `${數字顏色+9}vw`;
-    ctx.fillStyle = 'hsla(255,0%,0%,1)';
-    ctx.fillRect(0, 0, width, height);
-  }
-  if (mouse.x > width)  mouse.x = width;
-  if (mouse.y > height) mouse.y = height;
+  // 畫布 resize 加 debounce，避免連續觸發
+  clearTimeout(_resizeTimer);
+  _resizeTimer = setTimeout(() => {
+    width  = canvas.width  = window.innerWidth;
+    height = canvas.height = window.innerHeight;
+    短邊 = Math.min(width, height);
+
+    if (遊戲靜止 == 1) {
+      ctx.fillStyle = 'hsla(255,30%,10%,1)';
+      ctx.fillRect(0, 0, width, height);
+    } else if (遊戲靜止 == 2) {
+      const a = 數字顏色/200+0.01;
+      el數字.style.color      = `hsla(0,100%,100%,${a})`;
+      el數字.style.textShadow = `0 0 0.04em hsla(0,100%,100%,${a})`;
+      el數字.style.fontSize   = `${數字顏色+9}vw`;
+      ctx.fillStyle = 'hsla(255,0%,0%,1)';
+      ctx.fillRect(0, 0, width, height);
+    }
+  }, 100);
 };
 
 
@@ -913,14 +942,8 @@ window.onresize = function() {
 
 ctx.fillStyle = 'hsla(255,30%,10%,1)';
 ctx.fillRect(0, 0, width, height);
-document.getElementById('w42').style.textShadow = '0 0 4px hsla(0,100%,100%,0.3)';
-
-// 根據裝置顯示不同提示
-if (移動端) {
-  document.getElementById('w42').textContent = '點擊以開始旅程... ☝️ 移動 · 輕觸炸彈';
-} else {
-  document.getElementById('w42').textContent = '點擊以開始旅程...';
-}
+elW42.style.textShadow = '0 0 4px hsla(0,100%,100%,0.3)';
+elW42.textContent = 移動端 ? '點擊以開始旅程... ☝️ 移動 · 輕觸炸彈' : '點擊以開始旅程...';
 
 document.addEventListener('click',    start, { once: true });
 document.addEventListener('touchend', start, { once: true });
@@ -957,15 +980,15 @@ function 遊戲結束() {
     遊戲靜止 = 2;
 
     if (balls.length >= 42 && hardMode == 0) {
-      document.getElementById('w42').textContent = '《 you got 42! 已解鎖擁擠模式：更難，更緊 張。》';
+      elW42.textContent = '《 you got 42! 已解鎖擁擠模式：更難，更緊 張。》';
       hardMode = 1;
     } else if (balls.length >= 42 && hardMode == 1) {
-      document.getElementById('w42').textContent = '《 you got 42! 》';
+      elW42.textContent = '《 you got 42! 》';
     } else {
-      document.getElementById('w42').textContent = '《 where\'s 42? 》';
+      elW42.textContent = '《 where\'s 42? 》';
     }
 
-    document.getElementById('w42').style.textShadow = '0 0 4px hsla(0,100%,100%,0.5)';
+    elW42.style.textShadow = '0 0 4px hsla(0,100%,100%,0.5)';
     count = 0;
 
     document.querySelector('body').addEventListener('click',    loop, { once: true });
