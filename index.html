@@ -226,7 +226,10 @@ let mouse = { x: 0, y: 0 };
 let 上一觸控位置 = null;
 // 觸控：用來區分「移動」和「點擊炸彈」
 let 觸控移動中 = false;
+const 觸控移動倍率 = 1.5;
 const 點擊判定距離 = 10; // px，小於此距離才算點擊（輕觸炸彈）
+
+
 
 window.addEventListener('mousemove', (e) => {
   mouse.x = e.pageX;
@@ -251,9 +254,9 @@ window.addEventListener('touchmove', (e) => {
     const dx = t.pageX - 上一觸控位置.x;
     const dy = t.pageY - 上一觸控位置.y;
 
-    // 套用相對位移，並夾在畫布範圍內
-    mouse.x = Math.max(0, Math.min(width,  mouse.x + dx));
-    mouse.y = Math.max(0, Math.min(height, mouse.y + dy));
+    // 套用相對位移（含倍率），並夾在畫布範圍內
+    mouse.x = Math.max(0, Math.min(width,  mouse.x + dx * 觸控移動倍率));
+    mouse.y = Math.max(0, Math.min(height, mouse.y + dy * 觸控移動倍率));
 
     // 移動距離超過閾值 → 標記為「移動中」（不觸發炸彈）
     if (Math.sqrt(dx*dx + dy*dy) > 點擊判定距離) {
