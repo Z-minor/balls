@@ -3,10 +3,115 @@
   <head>
     <META HTTP-EQUIV="PRAGMA" CONTENT="NO-CACHE">
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>圓點逃亡</title>
-    <link rel="stylesheet" href="style.css">
+    <style>
+* {
+  box-sizing: border-box;
+}
+html, body {
+  margin: 0;
+}
+html {
+  font-family: sans-serif;
+  height: 100%;
+}
+body {
+  overflow: hidden;
+  height: inherit;
+}
+#移動端訊息 {
+  position: absolute;
+  display: none;
+  font-size: 1.8vh;
+  top: 50%;
+  left: 50%;
+  height: 200vh;
+  width: 200vw;
+  transform: translate(-50% , -50%);
+  background-color: rgb(26, 20, 30);
+}
+#不支援 {
+  position: relative;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50% , -50%);
+  text-align: center;
+  color: rgb(218, 242, 242);
+  border: 0px solid rgb(218, 242, 242);
+}
+h1 {
+  font-size: 0rem;
+  letter-spacing: -1px;
+  position: absolute;
+  margin: 0;
+  top: -4px;
+  right: 5px;
+  color: transparent;
+  text-shadow: 0 0 4px white;
+}
+.w42 {
+  user-select: none;
+  margin:auto auto 10px;
+  right:0;
+  left:0;
+  bottom:10px;
+  height:100px;
+  width:100%;
+  position: absolute;
+  display:flex;
+  align-items:center;
+  justify-content: center;
+}
+#w42 {
+  user-select: none;
+  font-size: 2rem;
+  font-family: 'Arial Black','sans-serif';
+  letter-spacing: -1px;
+  color: transparent;
+  text-shadow: 0 0 4px hsla(0,100%,100%,0.0);
+  background-color:hsla(0,100%,100%,0.00);
+  border-radius:10px;
+}
+.live {
+  position: absolute;
+  top:20px;
+  left:20px;
+  height:150px;
+  width:30px;
+  border-radius:10px;
+  background-color:hsla(0,100%,100%,0.05);
+  background: linear-gradient(#e6646566, #9198e566);
+  box-shadow: 2px 5px 16px hsla(250,100%,90%,0.3);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+}
+#l1, #l2, #l3, #l4, #l5 {
+  height:10px;
+  width:10px;
+  background-color:hsla(0,100%,100%,0.6);
+  border-radius:50%;
+  box-shadow: 0px 0px 5px hsla(250,100%,100%,0.8);
+}
+#l1 { margin:20px 0px 0px; }
+#l2, #l3, #l4, #l5 { margin:15px 0px 0px; }
+.num {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%,-50%);
+}
+.number {
+  user-select: none;
+  font-family: 'Arial Black','sans-serif';
+  font-size: 50vw;
+  color: hsla(0,100%,100%,0.04);
+  letter-spacing: -0.04em;
+  text-shadow: 0 0 0.04em hsla(0,100%,100%,0.1);
+}
+    </style>
   </head>
-
   <body>
     <audio id="lune" src="audio/lune.mp3"></audio>
     <audio id="cat" src="audio/cat.mp3"></audio>
@@ -26,15 +131,847 @@
       <p class="number"></p>
     </div>
     <div class="w42">
-    <p id="w42"></p>
+      <p id="w42"></p>
     </div>
     <canvas></canvas>
     <div id="移動端訊息">
-      <div id="不支援">
-        本遊戲暫不支援觸摸屏遊玩，請以PC端開啟。<br>感謝您的理解與體諒。</div>
+      <div id="不支援"></div>
     </div>
+    <script>
+// ── 裝置偵測 ──────────────────────────────────────────────
+let 移動端 = isMobile();
+
+function isMobile() {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+      || navigator.maxTouchPoints > 1;
+}
+
+// 移動端不再封鎖，直接隱藏提示訊息
+document.getElementById('移動端訊息').style.display = 'none';
 
 
-    <script src="main.js"></script>
+// ── 畫布設置 ──────────────────────────────────────────────
+
+const canvas = document.querySelector('canvas');
+const ctx = canvas.getContext('2d');
+
+let width  = canvas.width  = window.innerWidth;
+let height = canvas.height = window.innerHeight;
+let 短邊 = Math.min(width, height);
+
+let 計時器 = 0;
+let 愛心脈動比例 = 0;
+let fails = 0;
+let alive = 15;
+let deathX, deathY, deathC;
+let hp = 4;
+let backgroundHue = 255;
+let after42  = 0;
+let hardMode = 0;
+let i = 0, j = 0, k = 0, l = 0, n = 0;
+let 血量 = [1,1,1,1,0];
+let 補血道具重生計時 = 0;
+let 補血道具x, 補血道具y;
+let 炸彈爆炸特效定位與計時 = [[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]];
+let 爆炸半徑 = 0;
+let 自身原始半徑 = 20;
+let 自身半徑    = 自身原始半徑;
+let 自身最小半徑 = 4;
+let 自身變大 = 0;
+let 回血量   = 1;
+let 子彈時間計時器    = 0;
+let 子彈時間速度因子  = 1;
+let 子彈時間總長      = 300;
+let 子彈時間減速區間比例 = 5;
+let 子彈時間迭代起始速度 = 1;
+
+
+// ── 音效 ──────────────────────────────────────────────────
+
+let lune   = document.getElementById('lune');
+let cat    = document.getElementById('cat');
+let end    = document.getElementById('end');
+let boom   = document.getElementById('boom');
+let lala   = document.getElementById('lala');
+let bubble = document.getElementById('bubble');
+
+document.addEventListener('click',    lunePlay, { once: true });
+document.addEventListener('touchend', lunePlay, { once: true });
+
+function lunePlay() {
+  lune.play();
+}
+
+
+// ── 指標追蹤（滑鼠 + 觸控統一介面）─────────────────────────
+
+let mouse = { x: 0, y: 0 };
+
+// 觸控：上一幀手指位置（用於計算 delta）
+let 上一觸控位置 = null;
+// 觸控：用來區分「移動」和「點擊炸彈」
+let 觸控移動中 = false;
+const 點擊判定距離 = 10; // px，小於此距離才算點擊（輕觸炸彈）
+
+window.addEventListener('mousemove', (e) => {
+  mouse.x = e.pageX;
+  mouse.y = e.pageY;
+});
+
+// touchstart：記錄起始手指位置，球不移動
+window.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  if (e.touches.length === 1) {
+    const t = e.touches[0];
+    上一觸控位置 = { x: t.pageX, y: t.pageY };
+    觸控移動中 = false;
+  }
+}, { passive: false });
+
+// touchmove：計算手指位移 delta，將 delta 套用到 mouse 座標
+window.addEventListener('touchmove', (e) => {
+  e.preventDefault();
+  if (e.touches.length === 1 && 上一觸控位置) {
+    const t = e.touches[0];
+    const dx = t.pageX - 上一觸控位置.x;
+    const dy = t.pageY - 上一觸控位置.y;
+
+    // 套用相對位移，並夾在畫布範圍內
+    mouse.x = Math.max(0, Math.min(width,  mouse.x + dx));
+    mouse.y = Math.max(0, Math.min(height, mouse.y + dy));
+
+    // 移動距離超過閾值 → 標記為「移動中」（不觸發炸彈）
+    if (Math.sqrt(dx*dx + dy*dy) > 點擊判定距離) {
+      觸控移動中 = true;
+    }
+
+    上一觸控位置 = { x: t.pageX, y: t.pageY };
+  }
+}, { passive: false });
+
+// touchend：手指放開，若沒有移動 → 輕觸炸彈
+window.addEventListener('touchend', (e) => {
+  e.preventDefault();
+  if (!觸控移動中) {
+    炸彈攻擊();
+  }
+  上一觸控位置 = null;
+  觸控移動中 = false;
+}, { passive: false });
+
+function 指距(t1, t2) {
+  const dx = t1.pageX - t2.pageX;
+  const dy = t1.pageY - t2.pageY;
+  return Math.sqrt(dx*dx + dy*dy);
+}
+
+
+// ── 繪製自身球 ────────────────────────────────────────────
+
+function drawMe() {
+  ctx.beginPath();
+  ctx.fillStyle = 'hsla(0,100%,100%,0.8)';
+  ctx.shadowColor   = 'white';
+  ctx.shadowOffsetY = 0;
+  ctx.shadowOffsetX = 0;
+  ctx.arc(mouse.x, mouse.y, 自身半徑, 0, 2 * Math.PI);
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.arc(mouse.x, mouse.y, 爆炸半徑, 0, 2 * Math.PI);
+  ctx.shadowColor   = 'hsla(30,100%,100%,1)';
+  ctx.shadowOffsetY = 0;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowBlur    = 20;
+  ctx.lineWidth     = 1;
+  ctx.strokeStyle   = `hsla(0,100%,100%,${0.5*(Math.abs(計時器%140-70))/70+0.1})`;
+  ctx.stroke();
+}
+
+
+// ── 工具函數 ──────────────────────────────────────────────
+
+function random(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function randomND(min, max) {
+  let sum = 0;
+  for (let k = 0; k < 20; k++) sum += Math.floor(Math.random() * 2);
+  sum *= (max - min) / 20;
+  sum += min;
+  return sum;
+}
+
+
+// ── Ball 構造器 ───────────────────────────────────────────
+
+function Ball(x, y, velX, velY, size) {
+  this.x    = x;  this.xr = 0;
+  this.y    = y;  this.yr = 0;
+  this.velX = velX;
+  this.velY = velY;
+  this.speed = Math.sqrt(Math.pow(Math.abs(velX),1.7) + Math.pow(Math.abs(velY),1.7));
+  this.hue        = random(230, 280);
+  this.hueD       = random(0, 1);
+  this.saturation = random(40, 100);
+  this.lightness  = randomND(50, 80);
+  this.被炸特效   = 0;
+  this.size       = size;
+  this.d = (Math.pow(Math.abs(velX),1.5) + Math.pow(Math.abs(velY),1.5)) / 40 * Math.random() + 0.5;
+  this.baby       = 0;
+  this.緩速狀態   = 0;
+  this.當前幀大小變化 = 0;
+}
+
+Ball.prototype.babies = function() {
+  if (this.baby < 200) this.baby++;
+};
+
+// ── 視覺效果 ──────────────────────────────────────────────
+
+function disappear() {
+  ctx.beginPath();
+  ctx.fillStyle   = `hsla(${deathC},100%,95%,${((alive)/33)-2})`;
+  ctx.shadowColor = 'white';
+  ctx.shadowOffsetY = 0;
+  ctx.shadowOffsetX = 0;
+  ctx.arc(deathX, deathY, (110-alive)*7, 0, 2 * Math.PI);
+  ctx.fill();
+}
+
+function 血條損一滴血(第n滴血) {
+  document.getElementById(`l${第n滴血}`).style.backgroundColor = `hsla(0,100%,0%,${(-血量[第n滴血-1])/100})`;
+  document.getElementById(`l${第n滴血}`).style.boxShadow = `0px 0px 5px hsla(0,100%,0%,${(-血量[第n滴血-1])/100})`;
+}
+
+function appear() {
+  ctx.beginPath();
+  ctx.fillStyle   = `hsla(0,100%,100%,${(1-(alive)/15)})`;
+  ctx.shadowColor = 'white';
+  ctx.shadowOffsetY = 0;
+  ctx.shadowOffsetX = 0;
+  ctx.arc(mouse.x, mouse.y, (alive + 自身半徑), 0, 2 * Math.PI);
+  ctx.fill();
+}
+
+Ball.prototype.敵球具象特效 = function() {
+  ctx.beginPath();
+  ctx.fillStyle = `hsla(0,0%,0%,${(166-this.baby)/50})`;
+  ctx.arc(this.x, this.y, this.size+(this.baby-150)*3, 0, 2 * Math.PI);
+  ctx.shadowColor = `hsla(0,0%,0%,${(170-this.baby)/50})`;
+  ctx.shadowOffsetY = 0;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowBlur = 15;
+  ctx.fill();
+};
+
+Ball.prototype.敵球具象特效42 = function() {
+  ctx.beginPath();
+  ctx.fillStyle = `hsla(${this.hue},${this.saturation}%,${this.lightness}%,${(170-this.baby)/20})`;
+  ctx.arc(this.x, this.y, this.size+(this.baby-150)*3, 0, 2 * Math.PI);
+  ctx.shadowColor = `hsla(${this.hue},${this.saturation}%,${this.lightness}%,${(170-this.baby)/20})`;
+  ctx.shadowOffsetY = 0;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowBlur = 15;
+  ctx.fill();
+};
+
+Ball.prototype.draw42 = function() {
+  if (this.baby > 150 && this.baby <= 170) this.敵球具象特效42();
+  ctx.beginPath();
+  ctx.fillStyle = `hsla(${this.hue},${this.saturation}%,${this.lightness}%,${this.baby/500})`;
+  ctx.arc(this.x, this.y, this.size, 0, 2 * Math.PI);
+  ctx.shadowColor   = `hsla(${this.hue},${this.saturation}%,10%,1)`;
+  ctx.shadowOffsetY = 10;
+  ctx.shadowOffsetX = 10;
+  ctx.shadowBlur    = 3;
+  ctx.fill();
+};
+
+Ball.prototype.draw = function() {
+  if (this.baby > 150 && this.baby < 200) this.敵球具象特效();
+
+  ctx.beginPath();
+  if (this.baby <= 150) {
+    ctx.fillStyle = `hsla(0,0%,${(50+this.baby)/3}%,${this.baby/500})`;
+  } else {
+    ctx.fillStyle = `hsla(0,0%,0%,${this.baby/300})`;
+  }
+  ctx.arc(this.x, this.y, this.size, 0, 2 * Math.PI);
+  ctx.shadowColor   = `hsla(${this.hue},100%,80%,0.5)`;
+  ctx.shadowOffsetY = 10;
+  ctx.shadowOffsetX = 10;
+  ctx.shadowBlur    = 40;
+  ctx.fill();
+
+  // 關閉 shadow 避免影響後續渲染
+  ctx.shadowBlur  = 0;
+  ctx.shadowColor = 'transparent';
+
+  // 共用 hsl 字串，減少重複拼接
+  const hsl  = `${this.hue},${this.saturation}%,${this.lightness}%`;
+  const s    = this.size;
+
+  const radgrad = ctx.createRadialGradient(
+    this.x - s/5, this.y - s/5, 0,
+    this.x,       this.y,       s
+  );
+  radgrad.addColorStop(0,    `hsla(${hsl},${this.baby/10000})`);
+  radgrad.addColorStop(0.5,  `hsla(${hsl},${this.baby/1000})`);
+  radgrad.addColorStop(0.95, `hsla(${hsl},${this.baby/500})`);
+  radgrad.addColorStop(1,    `hsla(${hsl},0)`);
+
+  ctx.fillStyle = radgrad;
+  // ★ 只填充球的包圍框，不再 fillRect 整個畫布
+  ctx.fillRect(this.x - s, this.y - s, s * 2, s * 2);
+
+  if (this.被炸特效 > 0) {
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size, 0, 2 * Math.PI);
+    ctx.fillStyle = `hsla(0,100%,100%,${this.被炸特效/15})`;
+    ctx.fill();
+    this.被炸特效--;
+  }
+};
+
+Ball.prototype.update = function() {
+  if ((this.x + this.size - 50) >= width  && this.velX > 0) this.velX = -this.velX;
+  if ((this.x - this.size + 50) <= 0      && this.velX < 0) this.velX = -this.velX;
+  if ((this.y + this.size - 50) >= height && this.velY > 0) this.velY = -this.velY;
+  if ((this.y - this.size + 50) <= 0      && this.velY < 0) this.velY = -this.velY;
+
+  if (this.緩速狀態 == 1) {
+    this.x += this.velX * 子彈時間速度因子;
+    this.y += this.velY * 子彈時間速度因子;
+  } else {
+    this.x += this.velX * (1 + 子彈時間速度因子) / 2;
+    this.y += this.velY * (1 + 子彈時間速度因子) / 2;
+  }
+};
+
+Ball.prototype.collisionDetect = function() {
+  if (this.baby > 150 && alive == 1) {
+    const 碰撞距離 = 自身半徑 + this.size;
+    if ((mouse.x-this.x)**2 + (mouse.y-this.y)**2 < 碰撞距離 * 碰撞距離) {
+      this.size /= 3;
+      if (this.size < 短邊/100) this.size = 短邊/100;
+      alive = 100;
+
+      cat.currentTime = 0;
+      cat.play();
+
+      if (補血道具重生計時 == 0) 補血道具重生計時 = 1;
+      血量[hp-1] = 0;
+      deathX = mouse.x;
+      deathY = mouse.y;
+      deathC = this.hue;
+      if (hp > 0) hp--;
+      if (hp == 0) return 0;
+    }
+  }
+  for (j = i; j < balls.length; j++) {
+    this.單組碰撞處理();
+  }
+  return 1;
+};
+
+Ball.prototype.單組碰撞處理 = function() {
+  if (this !== balls[j]) {
+    const dx = this.x - balls[j].x;
+    const dy = this.y - balls[j].y;
+    const xx = dx > 0 ? 1 : -1;
+    const yy = dy > 0 ? 1 : -1;
+    const distSq = dx*dx + dy*dy;
+    const 碰撞半徑和 = this.size + balls[j].size;
+
+    if (distSq < 碰撞半徑和 * 碰撞半徑和) {
+      // hardMode 才需要真正的 distance 和 ratio
+      if (hardMode) {
+        const distance = Math.sqrt(distSq);
+        const ratio = (dx*dx) / (dy*dy);
+        this.velX    =  xx * Math.sqrt(this.speed**2 / (1 + 1/(ratio**2)));
+        this.velY    =  yy * Math.sqrt(this.speed**2 / (ratio**2 + 1));
+        balls[j].velX = -xx * Math.sqrt(balls[j].speed**2 / (1 + 1/(ratio**2)));
+        balls[j].velY = -yy * Math.sqrt(balls[j].speed**2 / (ratio**2 + 1));
+      }
+
+      if (balls.length >= 42) {
+        this.hue    = (this.hue    + 1) % 360;
+        balls[j].hue = (balls[j].hue + 1) % 360;
+      } else {
+        this.基本變色();
+        balls[j].基本變色();
+      }
+
+      if (this.當前幀大小變化 < 8) {
+        const 速因 = this.緩速狀態 == 1 ? 子彈時間速度因子 : 1;
+        this.size += this.d * 0.8 * 速因;
+        if (this.size > height/8) this.size += this.d * (this.size - height/8) / 20 * 速因;
+        this.當前幀大小變化++;
+      }
+
+      if (balls[j].當前幀大小變化 < 8) {
+        const 速因j = balls[j].緩速狀態 == 1 ? 子彈時間速度因子 : 1;
+        balls[j].size += balls[j].d * 速因j;
+        balls[j].當前幀大小變化++;
+      }
+    }
+  }
+};
+
+Ball.prototype.基本變色 = function() {
+  if (this.hueD == 0) {
+    this.hue += 0.5;
+    if (this.hue >= 280) this.hueD++;
+  } else {
+    this.hue -= 0.5;
+    if (this.hue <= 230) this.hueD--;
+  }
+};
+
+Ball.prototype.球大小變化方向反轉判斷 = function() {
+  if (this.size > width/8 + balls.length/2 || this.size > height/8 + balls.length/2) {
+    this.d = -(this.velX**2 + this.velY**2) / 50;
+  }
+  if (this.size < width/100 || this.size < height/100) {
+    this.d = (this.velX**2 + this.velY**2) / 50;
+  }
+};
+
+
+// ── 炸彈攻擊 ──────────────────────────────────────────────
+
+function 炸彈攻擊() {
+  if (alive == 1 && hp > 1) {
+    boom.play();
+    boom.currentTime = 0;
+
+    子彈時間計時器 = 1;
+    if (子彈時間計時器 > 0) 子彈時間迭代起始速度 = 子彈時間速度因子;
+
+    炸彈爆炸特效定位與計時[hp-2][0] = mouse.x;
+    炸彈爆炸特效定位與計時[hp-2][1] = mouse.y;
+    炸彈爆炸特效定位與計時[hp-2][2] = 30;
+    炸彈爆炸特效定位與計時[hp-2][3] = 1;
+    炸彈爆炸特效定位與計時[hp-2][4] = 爆炸半徑;
+
+    if (補血道具重生計時 == 0) 補血道具重生計時 = 1;
+    hp--;
+    血量[hp] = 0;
+
+    for (l = 0; l < balls.length; l++) {
+      const 炸彈碰撞半徑 = 爆炸半徑 + balls[l].size;
+      if ((mouse.x-balls[l].x)**2 + (mouse.y-balls[l].y)**2 < 炸彈碰撞半徑 * 炸彈碰撞半徑) {
+        if (balls[l].size > width/100 || balls[l].size > height/100) {
+          balls[l].size /= 5;
+          if (balls[l].size < 短邊/100) balls[l].size = 短邊/100;
+        }
+        balls[l].被炸特效 = 15;
+        balls[l].緩速狀態 = 1;
+      }
+    }
+    自身變大 = 1;
+    爆炸半徑 = 0;
+  }
+}
+
+
+// ── 球的生成 ──────────────────────────────────────────────
+
+let balls = [];
+let count = 0;
+let x軸速度, y軸速度;
+
+function createballs() {
+  if ((balls.length < (count)/8 - Math.pow(balls.length, 1.5) && balls.length < 42) || balls.length >= 42) {
+    let size = random(10, height/2 - count/150);
+    if (balls.length >= 42) size += balls.length * 1;
+
+    for (let o = 0; o < 4; o++) {
+      x軸速度 = randomND(-5 - balls.length/8, 5 + balls.length/8);
+      y軸速度 = randomND(-5 - balls.length/8, 5 + balls.length/8);
+      if (Math.sqrt(Math.pow(Math.abs(x軸速度), 1.7) + Math.pow(Math.abs(y軸速度), 1.7)) > 0.25) break;
+    }
+
+    balls.push(new Ball(
+      random(0 + size, width  - size),
+      random(0 + size, height - size),
+      x軸速度, y軸速度, size
+    ));
+  }
+}
+
+
+// ── 觸控操作說明圖示（行動裝置顯示）────────────────────────
+
+function drawTouchHint() {
+  if (!移動端) return;
+
+  const 提示透明度 = Math.max(0, 1 - count / 200);
+  if (提示透明度 <= 0) return;
+
+  const cx = width - 90;
+  const cy = height - 70;
+
+  ctx.save();
+  ctx.globalAlpha = 提示透明度 * 0.7;
+
+  // 背景圓
+  ctx.beginPath();
+  ctx.fillStyle = 'hsla(250,50%,10%,0.6)';
+  ctx.roundRect(cx - 75, cy - 50, 150, 100, 12);
+  ctx.fill();
+
+  // 移動圖示：單指
+  ctx.fillStyle = 'hsla(0,0%,100%,0.9)';
+  ctx.font = '22px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('☝️', cx - 30, cy - 10);
+  ctx.font = '10px sans-serif';
+  ctx.fillStyle = 'hsla(0,0%,100%,0.7)';
+  ctx.fillText('移動', cx - 30, cy + 10);
+
+  // 攻擊圖示：點擊
+  ctx.fillStyle = 'hsla(0,0%,100%,0.9)';
+  ctx.font = '22px sans-serif';
+  ctx.fillText('👆', cx + 30, cy - 10);
+  ctx.font = '10px sans-serif';
+  ctx.fillStyle = 'hsla(0,0%,100%,0.7)';
+  ctx.fillText('輕觸炸彈', cx + 30, cy + 10);
+
+  ctx.restore();
+}
+
+
+// ── 主循環 ────────────────────────────────────────────────
+
+function loop() {
+  // 初始化
+  if (count == 0) {
+    子彈時間計時器 = 0;
+    子彈時間速度因子 = 1;
+    子彈時間迭代起始速度 = 1;
+    遊戲靜止 = 0;
+
+    lune.currentTime = 0;
+    lune.play();
+
+    爆炸半徑    = 0;
+    自身半徑    = 自身原始半徑;
+    自身變大    = 0;
+    補血道具重生計時 = 1;
+    hp          = 4;
+    alive       = 15;
+    balls       = [];
+    計時器      = 0;
+    血量        = [1,1,1,1,0];
+
+    // 滑鼠炸彈（電腦）
+    document.querySelector('body').addEventListener('click', 炸彈攻擊);
+    // 注意：觸控炸彈已在 touchend 事件中處理，不需重複綁定
+
+    document.getElementById('w42').style.textShadow = '0 0 4px hsla(0,100%,100%,0)';
+    for (let k = 1; k < 6; k++) {
+      document.getElementById(`l${k}`).style.backgroundColor = 'hsla(0,100%,100%,0.6)';
+      document.getElementById(`l${k}`).style.boxShadow = '0px 0px 5px hsla(260,100%,100%,0.8)';
+    }
+    document.querySelector('body').removeEventListener('click', loop);
+  }
+
+  計時器++;
+
+  if ((hardMode==0 && balls.length<=42) || hardMode==1 || 1) {
+
+    if (balls.length < 42) {
+      createballs();
+    } else {
+      after42++;
+      if (after42 > 120) { after42 = 85; createballs(); }
+    }
+
+    // 背景
+    if (balls.length < 42) {
+      ctx.fillStyle = `hsla(255,40%,${10+balls.length}%,1)`;
+      ctx.fillRect(0, 0, width, height);
+    } else {
+      ctx.fillStyle = `hsla(${backgroundHue},60%,50%,1)`;
+      ctx.fillRect(0, 0, width, height);
+      backgroundHue = (backgroundHue + 2) % 360;
+    }
+
+    // 血條
+    for (let m = 0; m < 5; m++) {
+      if (血量[m] <= 0 && 血量[m] > -100) {
+        血條損一滴血(m+1);
+        血量[m]--;
+      }
+    }
+
+    // 自身球
+    if (alive > 15) { disappear(); alive--; }
+    if (alive < 16 && alive > 1) { appear(); alive--; }
+    if (mouse.x != 0 && mouse.y != 0 && alive == 1) drawMe();
+
+    if (自身變大 == 1) {
+      自身半徑 += 3;
+      if (自身半徑 > 自身原始半徑) 自身變大 = 0;
+    } else if (自身半徑 > 自身最小半徑) {
+      自身半徑 -= 0.05;
+    }
+
+    // 每顆球
+    for (i = 0, k = random(0, balls.length-1); i < balls.length; i++) {
+      balls[i].babies();
+      balls[i].球大小變化方向反轉判斷();
+      balls.length < 42 ? balls[i].draw() : balls[i].draw42();
+      balls[i].update();
+      if (balls[i].collisionDetect() == 0) break;
+      balls[i].當前幀大小變化 = 0;
+      k = k < balls.length-1 ? k+1 : 0;
+    }
+
+    // 補血道具
+    if (補血道具重生計時 > 0) {
+      if (補血道具重生計時 > 850 && 補血道具重生計時 < 860) {
+        for (n = 0; n < 50; n++) {
+          補血道具x = random(10, width-10);
+          補血道具y = random(10, height-10);
+          const 生成判定距離 = 短邊/1.8;
+          if ((mouse.x-補血道具x)**2 + (mouse.y-補血道具y)**2 > 生成判定距離 * 生成判定距離) break;
+        }
+        補血道具重生計時 = n == 50 ? 500 : 870;
+      }
+
+      補血道具重生計時 += 3;
+
+      if (補血道具重生計時 > 960 && 補血道具重生計時 <= 1000) {
+        ctx.beginPath();
+        ctx.fillStyle = `hsla(0,100%,100%,${(補血道具重生計時-960)/45})`;
+        ctx.shadowColor = 'white';
+        ctx.shadowOffsetY = 0;
+        ctx.shadowOffsetX = 0;
+        ctx.arc(補血道具x, 補血道具y, (1018-補血道具重生計時), 0, 2*Math.PI);
+        ctx.fill();
+      }
+
+      if (補血道具重生計時 > 1000) {
+        補血道具重生計時 = -1;
+        bubble.currentTime = 0;
+      }
+    }
+
+    if (補血道具重生計時 < 0) {
+      // 補血道具主體
+      ctx.beginPath();
+      ctx.fillStyle = `hsla(0,100%,100%,${0.3*Math.abs(計時器%100-50)/50+0.5})`;
+      ctx.arc(補血道具x, 補血道具y, 18, 0, 2*Math.PI);
+      ctx.shadowColor   = 'hsla(30,100%,60%,1)';
+      ctx.shadowOffsetY = 0;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowBlur    = 50;
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(補血道具x, 補血道具y, 18+(計時器%80*2.5), 0, 2*Math.PI);
+      ctx.lineWidth   = 1;
+      ctx.strokeStyle = `hsla(250,100%,90%,${(40-計時器%80)/80*(補血道具重生計時/-200)})`;
+      ctx.stroke();
+
+      for (let q = 0; q < 5; q++) {
+        ctx.beginPath();
+        愛心脈動比例 = 20 - ((計時器+q*10)%200/10);
+        ctx.lineWidth   = 1;
+        ctx.strokeStyle = `hsla(${230+q*10},100%,70%,${(((計時器+q*10)%200)/200-0.5)*補血道具重生計時/-200})`;
+        ctx.moveTo(補血道具x, 補血道具y+8*愛心脈動比例);
+        ctx.bezierCurveTo(補血道具x-15*愛心脈動比例, 補血道具y+3*愛心脈動比例, 補血道具x-5*愛心脈動比例, 補血道具y-15*愛心脈動比例, 補血道具x, 補血道具y-4*愛心脈動比例);
+        ctx.bezierCurveTo(補血道具x+5*愛心脈動比例, 補血道具y-15*愛心脈動比例, 補血道具x+15*愛心脈動比例, 補血道具y+3*愛心脈動比例, 補血道具x, 補血道具y+8*愛心脈動比例);
+        ctx.stroke();
+      }
+
+      // 愛心
+      ctx.beginPath();
+      ctx.fillStyle = `hsla(${Math.abs(計時器%100-50)+230},90%,80%,${0.1*Math.abs((計時器+25)%100-50)/50+0.9})`;
+      if (計時器%80 < 30)       愛心脈動比例 = 1.5 - Math.abs((計時器%80/30)-0.5);
+      else if (計時器%80 < 50)  愛心脈動比例 = 1.3 - Math.abs(((計時器%80-30)/20*0.6)-0.3);
+      else                       愛心脈動比例 = 1;
+
+      ctx.moveTo(補血道具x, 補血道具y+8*愛心脈動比例);
+      ctx.bezierCurveTo(補血道具x-15*愛心脈動比例, 補血道具y+3*愛心脈動比例, 補血道具x-5*愛心脈動比例, 補血道具y-15*愛心脈動比例, 補血道具x, 補血道具y-4*愛心脈動比例);
+      ctx.bezierCurveTo(補血道具x+5*愛心脈動比例, 補血道具y-15*愛心脈動比例, 補血道具x+15*愛心脈動比例, 補血道具y+3*愛心脈動比例, 補血道具x, 補血道具y+8*愛心脈動比例);
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.moveTo(補血道具x, 補血道具y+8*愛心脈動比例);
+      ctx.bezierCurveTo(補血道具x-15*愛心脈動比例, 補血道具y+3*愛心脈動比例, 補血道具x-5*愛心脈動比例, 補血道具y-15*愛心脈動比例, 補血道具x, 補血道具y-4*愛心脈動比例);
+      ctx.bezierCurveTo(補血道具x+5*愛心脈動比例, 補血道具y-15*愛心脈動比例, 補血道具x+15*愛心脈動比例, 補血道具y+3*愛心脈動比例, 補血道具x, 補血道具y+8*愛心脈動比例);
+      ctx.lineWidth   = 0.5;
+      ctx.strokeStyle = `hsla(${Math.abs(計時器%100-50)+230},100%,90%,${0.5*Math.abs(20-計時器%40)/20+0.5})`;
+      ctx.stroke();
+
+      if (補血道具重生計時 > -200) 補血道具重生計時--;
+
+      const 拾取半徑 = 自身半徑 + 18;
+      if ((mouse.x-補血道具x)**2 + (mouse.y-補血道具y)**2 < 拾取半徑 * 拾取半徑) {
+        bubble.currentTime = 0;
+        bubble.play();
+        for (let p = 1; p <= 回血量; p++) {
+          hp++;
+          if (hp > 5) { hp = 5; break; }
+          document.getElementById(`l${hp}`).style.backgroundColor = 'hsla(0,100%,100%,0.6)';
+          document.getElementById(`l${hp}`).style.boxShadow = '0px 0px 5px hsla(260,100%,100%,0.8)';
+        }
+        補血道具重生計時 = hp < 5 ? 1 : 0;
+        for (let o = 1; o <= 回血量; o++) 血量[hp-o] = 1;
+        document.getElementById(`l${hp}`).style.backgroundColor = 'hsla(0,100%,100%,0.6)';
+        document.getElementById(`l${hp}`).style.boxShadow = '0px 0px 5px hsla(260,100%,100%,0.8)';
+      }
+    }
+
+    // 炸彈特效
+    for (let p = 0; p < 4; p++) {
+      if (炸彈爆炸特效定位與計時[p][3] == 1) {
+        ctx.beginPath();
+        ctx.fillStyle   = `hsla(0,100%,100%,${炸彈爆炸特效定位與計時[p][2]/30})`;
+        ctx.arc(炸彈爆炸特效定位與計時[p][0], 炸彈爆炸特效定位與計時[p][1], 炸彈爆炸特效定位與計時[p][4], 0, 2*Math.PI);
+        ctx.shadowColor   = 'hsla(30,100%,60%,1)';
+        ctx.shadowOffsetY = 0;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowBlur    = 50;
+        ctx.fill();
+        炸彈爆炸特效定位與計時[p][2]--;
+        if (炸彈爆炸特效定位與計時[p][2] == 0) 炸彈爆炸特效定位與計時[p][3] = 0;
+      }
+    }
+
+    爆炸半徑++;
+
+    // 子彈時間
+    if (子彈時間計時器 > 0) {
+      子彈時間計時器++;
+      if (子彈時間計時器 < 子彈時間總長/子彈時間減速區間比例) {
+        子彈時間速度因子 = Math.pow((子彈時間總長/子彈時間減速區間比例 - 子彈時間計時器) / 子彈時間總長 * 子彈時間減速區間比例, 1.5) * 子彈時間迭代起始速度;
+      } else {
+        子彈時間速度因子 = Math.pow(1 / ((子彈時間總長*1.1 - (子彈時間計時器 - 子彈時間總長/子彈時間減速區間比例) / (1 - 1/子彈時間減速區間比例)) / 子彈時間總長 * 10), 1.3);
+      }
+      if (子彈時間計時器 > 子彈時間總長) {
+        子彈時間計時器 = 0;
+        子彈時間速度因子 = 1;
+        子彈時間迭代起始速度 = 1;
+        for (let o = 0; o < balls.length; o++) balls[o].緩速狀態 = 0;
+      }
+    }
+
+    // 觸控提示圖示
+    drawTouchHint();
+
+    // 數字
+    if (hp > 0) {
+      if (count < 6200) count++;
+      document.querySelector('.number').textContent = `${balls.length}`;
+      document.querySelector('.number').style.color       = `hsla(0,100%,100%,${(count/150+1)/200})`;
+      document.querySelector('.number').style.textShadow  = `0 0 0.04em hsla(0,100%,100%,${(count/150+1)/200})`;
+      document.querySelector('.number').style.fontSize    = `${(count/150+10)}vw`;
+      requestAnimationFrame(loop);
+    } else {
+      fails = 50;
+      遊戲結束();
+    }
+  } else {
+    fails = 50;
+    遊戲結束();
+  }
+}
+
+
+// ── 視窗縮放 ──────────────────────────────────────────────
+
+let 遊戲靜止 = 1;
+let 數字顏色 = 0;
+
+window.onresize = function() {
+  width  = canvas.width  = window.innerWidth;
+  height = canvas.height = window.innerHeight;
+  短邊 = Math.min(width, height);
+
+  if (遊戲靜止 == 1) {
+    ctx.fillStyle = 'hsla(255,30%,10%,1)';
+    ctx.fillRect(0, 0, width, height);
+  } else if (遊戲靜止 == 2) {
+    document.querySelector('.number').style.color      = `hsla(0,100%,100%,${數字顏色/200+0.01})`;
+    document.querySelector('.number').style.textShadow = `0 0 0.04em hsla(0,100%,100%,${數字顏色/200+0.01})`;
+    document.querySelector('.number').style.fontSize   = `${數字顏色+9}vw`;
+    ctx.fillStyle = 'hsla(255,0%,0%,1)';
+    ctx.fillRect(0, 0, width, height);
+  }
+  if (mouse.x > width)  mouse.x = width;
+  if (mouse.y > height) mouse.y = height;
+};
+
+
+// ── 遊戲啟動 ──────────────────────────────────────────────
+
+ctx.fillStyle = 'hsla(255,30%,10%,1)';
+ctx.fillRect(0, 0, width, height);
+document.getElementById('w42').style.textShadow = '0 0 4px hsla(0,100%,100%,0.3)';
+
+// 根據裝置顯示不同提示
+if (移動端) {
+  document.getElementById('w42').textContent = '點擊以開始旅程... ☝️ 移動 · 輕觸炸彈';
+} else {
+  document.getElementById('w42').textContent = '點擊以開始旅程...';
+}
+
+document.addEventListener('click',    start, { once: true });
+document.addEventListener('touchend', start, { once: true });
+
+function start() {
+  document.removeEventListener('click',    start);
+  document.removeEventListener('touchend', start);
+  loop();
+}
+
+
+// ── 遊戲結束 ──────────────────────────────────────────────
+
+function 遊戲結束() {
+  if (fails == 50) {
+    end.currentTime = 0;
+    end.play();
+    lune.pause();
+  }
+  document.querySelector('body').removeEventListener('click', 炸彈攻擊);
+
+  ctx.fillStyle   = 'hsla(0,0%,0%,0.1)';
+  ctx.shadowColor = 'hsla(250,100%,0%,0.02)';
+  ctx.fillRect(0, 0, width, height);
+
+  if (hp < 1) { 血條損一滴血(1); 血量[0] -= 2; }
+  alive -= 2;
+
+  if (fails > 0) {
+    fails--;
+    requestAnimationFrame(遊戲結束);
+  } else {
+    數字顏色 = count/150 + 1;
+    遊戲靜止 = 2;
+
+    if (balls.length >= 42 && hardMode == 0) {
+      document.getElementById('w42').textContent = '《 you got 42! 已解鎖擁擠模式：更難，更緊 張。》';
+      hardMode = 1;
+    } else if (balls.length >= 42 && hardMode == 1) {
+      document.getElementById('w42').textContent = '《 you got 42! 》';
+    } else {
+      document.getElementById('w42').textContent = '《 where\'s 42? 》';
+    }
+
+    document.getElementById('w42').style.textShadow = '0 0 4px hsla(0,100%,100%,0.5)';
+    count = 0;
+
+    document.querySelector('body').addEventListener('click',    loop, { once: true });
+    document.querySelector('body').addEventListener('touchend', loop, { once: true });
+  }
+}
+    </script>
   </body>
 </html>
